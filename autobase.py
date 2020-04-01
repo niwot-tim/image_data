@@ -100,14 +100,15 @@ cp =subprocess.check_output('ls /dev/ttyAC*', shell=True)
 usb_tty = chr(cp[-2])
 
 # create RTKLIB STR2STR command lines
-str2str_cmd1 = 'str2str -in serial://ttyACM' + usb_tty + ':115200 -out temp.log -c ' + rover_cmd_file + ' > str2str1.log'
+str2str_cmd1 = 'str2str -in serial://ttyACM' + usb_tty + ':115200 -out tcpsvr://:5001 -c ' + rover_cmd_file + ' > str2str1.log'
 # str2str_cmd_2 defined inline
 str2str_cmd3 = 'str2str -in serial://ttyACM' + usb_tty + ':115200 -out ' + stream_out  + ' -c ' + base_cmd_file + ' > str2str3.log'
 
 while True:  # main loop
 
 	# Wait for push button, if push button pressed for 5 seconds, shut Pi down
-	while True:
+	press = 0
+	while 0: #True:
 		blink_LED(1, 1)
 		if button_status() == 0:
 			GPIO.output(led, GPIO.HIGH)
@@ -130,7 +131,19 @@ while True:  # main loop
 	if cp == 0:
 		print('Stream server failed to start')
 		break  # exit main loop
-	blink_LED(5, 0.5)
+	blink_LED(3, 0.5)
+
+	# open TCP port
+	try:
+		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		sock.connect((TCP_IP, TCP_PORT))
+	except:
+		print('Error: Failed to open TCP/IP port')
+		os.killpg(os.getpgid(cp.pid), signal.SIGTERM)
+		break  # exit main loop
+
+	blink_LED(2, 0.5)
+
 	nsec = 0
 	while nsec < 30:
 		lat, lon, hgt, fix = get_GGA_msg(sock)
@@ -139,13 +152,14 @@ while True:  # main loop
 			break
 		blink_LED(1, 0.5)
 		nsec += 1
-	if lat = 0.0:
+	if lat == 0.0:
 		print('no valid GGA messages')
 		break
 
 	print('Stop stream server')
 	# close stream server
 	os.killpg(os.getpgid(cp.pid), signal.SIGTERM)
+	sock.close()  # close TCP port
 	time.sleep(0.5)
 	
 	# start STR2STR process to stream NTRIP base observations to F9P, F9P output will go to TCP port
