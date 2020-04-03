@@ -20,7 +20,7 @@ rover_cmd_file = 'rover.cmd'
 
 # Time constants
 max_wait = 10 * 60  # max wait for fix in seconds
-fix_time = 3 * 60   # required fix time in seconds for position fix
+fix_time = 1 * 60   # required fix time in seconds for position fix
 
 # TCP/IP defines
 TCP_PORT = 5001
@@ -147,7 +147,7 @@ while True:  # main loop
 	nsec = 0
 	while nsec < 30:
 		lat, lon, hgt, fix = get_GGA_msg(sock)
-		print('%d, %d, %.7f %.7f %.3f' % (t_fix, fix, lat, lon, hgt))
+		print('%d, %d, %.7f %.7f %.3f' % (nsec, fix, lat, lon, hgt))
 		if lat != 0.0:   # check for valid measurement
 			break
 		blink_LED(1, 0.5)
